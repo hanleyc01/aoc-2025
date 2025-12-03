@@ -34,7 +34,7 @@ typedef struct
  */
 static constring constring_from_char(const char* raw_str)
 {
-    size_t length = strnlen(raw_str, constring_maxlen);
+    size_t length = strlen(raw_str) - 1;
     constring str = {
         .length = length,
         .raw = raw_str,
@@ -54,6 +54,17 @@ static constring constring_from_char_n(const char* raw_str, size_t n)
         .length = n,
         .raw = raw_str,
     };
+}
+
+/**
+ * @brief convert a constring to a char pointer
+ */
+static char* constring_to_char(constring cstr)
+{
+    char* dest_string = (char*)malloc(cstr.length + 2);
+    snprintf(dest_string, cstr.length + 2, "%s", cstr.raw);
+    dest_string[cstr.length + 2] = '\0';
+    return dest_string;
 }
 
 /**
@@ -82,9 +93,12 @@ static constring constring_trim_leading(constring cstr)
 static constring constring_trim_trailing(constring cstr)
 {
     size_t i = cstr.length;
-    while (i >= 0 && isspace(cstr.raw[i]))
-        i--;
-    size_t new_len = cstr.length - i;
+    size_t j = 0;
+    while (i >= 0 && isspace(cstr.raw[i])) {
+        i = i - 1;
+        j = j + 1;
+    }
+    size_t new_len = cstr.length - j;
     return (constring) {
         .length = new_len,
         .raw = cstr.raw,
@@ -101,22 +115,56 @@ static constring constring_trim(constring cstr)
     return trimmed;
 }
 
-/**
- * @brief convert a constring to a char pointer
- */
-static char* constring_to_char(constring cstr)
-{
-    if (cstr.length == 0)
-        return "";
-    char* dest_string = (char*)malloc(cstr.length + 1);
-    snprintf(dest_string, cstr.length + 1, "%s", cstr.raw);
-    dest_string[cstr.length] = '\0';
-    return dest_string;
-}
-
 static bool constring_is_empty(constring cstr)
 {
     return cstr.length == 0;
+}
+
+/**
+ * @brief split a constring at `at`.
+ * @returns `constring** retval`, where `retval[0]` is the first element and `retval[1]` is the second element. `retval == NULL` whenever there is an error.
+ */
+static constring** constring_split_at(constring cstr, size_t at)
+{
+    // check if it goes over the length
+    if (at > cstr.length)
+        return NULL;
+
+    // initialize the return value
+    constring** retval = (constring**)malloc(sizeof(constring*) * 2);
+    retval[0] = NULL;
+    retval[1] = NULL;
+
+    // TODO(hanleyc01): these two branches probably should be marked unlikely; later optimization if it actually changes anything
+    if (at == cstr.length) {
+        constring* new_cstr = (constring*)malloc(sizeof(constring));
+        new_cstr->length = cstr.length;
+        new_cstr->raw = cstr.raw;
+        retval[0] = new_cstr;
+        return retval;
+    } else if (at == 0) {
+        constring* new_cstr = (constring*)malloc(sizeof(constring));
+        new_cstr->length = cstr.length;
+        new_cstr->raw = cstr.raw;
+        retval[1] = new_cstr;
+        return retval;
+    } else {
+        size_t fst_length = at - 1;
+        const char* fst_ptr = cstr.raw;
+        constring* fst = (constring*)malloc(sizeof(constring));
+        fst->length = fst_length;
+        fst->raw = cstr.raw;
+
+        size_t snd_length = cstr.length - at;
+        const char* snd_ptr = cstr.raw + at;
+        constring* snd = (constring*)malloc(sizeof(constring));
+        snd->length = snd_length;
+        snd->raw = snd_ptr;
+
+        retval[0] = fst;
+        retval[1] = snd;
+        return retval;
+    }
 }
 
 #endif

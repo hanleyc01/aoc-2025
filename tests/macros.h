@@ -16,6 +16,7 @@
 #define ASSERT(x)                                      \
     do {                                               \
         fprintf(stderr, "TESTING CONDITION " #x "\n"); \
+        assert(x);                                     \
     } while (0)
 
 #endif

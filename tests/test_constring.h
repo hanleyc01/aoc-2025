@@ -17,7 +17,7 @@ static void test_constring_from()
 {
     const char* test_str = "hello, world!";
     constring cstr = constring_from_char(test_str);
-    size_t test_len = strlen(test_str);
+    size_t test_len = strlen(test_str) - 1;
     ASSERT(cstr.length == test_len);
     ASSERT(cstr.raw == test_str);
 }
@@ -52,6 +52,7 @@ static void test_constring_trim_trailing()
 
     char* trimmed_str = constring_to_char(trimmed_cstr);
     ASSERT(strcmp(trimmed_str, "hello, world!") == 0);
+    free(trimmed_str);
 }
 
 static void test_constring_trim()
@@ -62,6 +63,7 @@ static void test_constring_trim()
 
     char* trimmed_str = constring_to_char(trimmed_cstr);
     ASSERT(strcmp(trimmed_str, "hello, world!") == 0);
+    free(trimmed_str);
 }
 
 static void test_constring_trim_empty()
@@ -72,6 +74,35 @@ static void test_constring_trim_empty()
 
     char* trimmed_str = constring_to_char(trimmed_cstr);
     ASSERT(strcmp(trimmed_str, "") == 0);
+    free(trimmed_str);
+}
+
+static void test_constring_split()
+{
+    const char* test_leading_ws = "hello, world!";
+    constring test_cstr = constring_from_char(test_leading_ws);
+    constring** splitten = constring_split_at(test_cstr, 7);
+
+    constring* lhs = splitten[0];
+    constring* rhs = splitten[1];
+
+    ASSERT(lhs != NULL);
+    ASSERT(rhs != NULL);
+
+    const char* lhs_str = constring_to_char(*lhs);
+    const char* rhs_str = constring_to_char(*rhs);
+
+    fprintf(stderr, "lhs_str: `%s`\n", lhs_str);
+    fprintf(stderr, "rhs_str: `%s`\n", rhs_str);
+
+    ASSERT(strcmp(lhs_str, "hello, ") == 0);
+    ASSERT(strcmp(rhs_str, "world!") == 0);
+
+    free((void*)lhs_str);
+    free((void*)rhs_str);
+    free(lhs);
+    free(rhs);
+    free(splitten);
 }
 
 static void test_constring(void)
@@ -82,6 +113,7 @@ static void test_constring(void)
     RUN_TEST(test_constring_trim_trailing);
     RUN_TEST(test_constring_trim);
     RUN_TEST(test_constring_trim_empty);
+    RUN_TEST(test_constring_split);
 }
 
 #endif
